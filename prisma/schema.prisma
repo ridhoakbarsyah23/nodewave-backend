@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String     @id @default(uuid())
+  email      String     @unique
+  password   String
+  name       String
+  role       Role
+  department Department?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  tasksAssigned Task[] @relation("TaskAssignee")
+  auditLogs     AuditLog[]
+}
+
+enum Role {
+  PM
+  INTERNAL
+  CLIENT
+}
+
+enum Department {
+  UI_UX
+  FRONTEND
+  BACKEND
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tasks       Task[]
+}
+
+model Task {
+  id            String    @id @default(uuid())
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id])
+  title         String
+  description   String
+  status        TaskStatus @default(TODO)
+  assigneeId    String?
+  assignee      User?     @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  clientVisible Boolean   @default(false)
+  version       Int       @default(1) // For Optimistic Locking
+  deletedAt     DateTime? // Soft Delete
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dependencies TaskDependency[] @relation("DependentTasks")
+  prerequisites TaskDependency[] @relation("PrerequisiteTasks")
+}
+
+model TaskDependency {
+  id             String @id @default(uuid())
+  taskId         String // Task that depends on something
+  task           Task   @relation("DependentTasks", fields: [taskId], references: [id])
+  prerequisiteId String // Task that must be completed first
+  prerequisite   Task   @relation("PrerequisiteTasks", fields: [prerequisiteId], references: [id])
+
+  @@unique([taskId, prerequisiteId])
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  taskId        String
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  changedColumn String
+  oldValue      String?
+  newValue      String?
+  timestamp     DateTime @default(now())
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  BLOCKED
+}
