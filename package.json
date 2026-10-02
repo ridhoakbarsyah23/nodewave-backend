@@ -23,6 +23,7 @@
     "zod": "^4.6.5"
   },
   "scripts": {
-    "postinstall": "prisma skills sync || exit 0"
+    "start": "bunx prisma migrate deploy && bun run prisma/seed.ts && bun run index.ts",
+    "postinstall": "bunx prisma generate"
   }
 }

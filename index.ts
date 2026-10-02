@@ -23,7 +23,7 @@ import tasksApp from './src/tasks'
 app.route('/api/auth', authApp)
 app.route('/api/tasks', tasksApp)
 
-const port = 3005
+const port = process.env.PORT ? parseInt(process.env.PORT) : 3005;
 console.log(`Server is running on port ${port}`)
 
 serve({
